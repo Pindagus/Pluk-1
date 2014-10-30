@@ -65,11 +65,12 @@ class Seed implements JsonSerializable
     public function jsonSerialize()
     {
         return array(
+            "id" => (int) $this->_Id,
             "name" => $this->_Name,
             "description" => $this->_Description,
-            "price" => $this->_Price,
+            "price" => (float) $this->_Price,
             "growtime" => $this->_Growtime,
-            "available" => $this->_Available
+            "available" => (boolean) $this->_Available
         );
     }
 }

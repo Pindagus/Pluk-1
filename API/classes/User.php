@@ -7,8 +7,9 @@ class User implements JsonSerializable
     private $_Username;
     private $_Password;
 
+    private $_Fields;
     private $_Seeds; //Seeds user has
-    //TODO: Add $_Products (Vegetables user has)
+    private $_Products;
 
     public function __construct(Database $database, $UserId)
     {
@@ -18,30 +19,47 @@ class User implements JsonSerializable
         if(!$this->_db->exists("SELECT id FROM user WHERE id = ?", array($UserId)))
             throw new Exception("Could not finish User constructor: UserId(".$UserId.") does not exist");
 
-        //Set user id
-        $this->_Id = $UserId;
-
-        //Load user details
-        $User = $this->_db->getRecord("SELECT username, password FROM user WHERE id = ? LIMIT 1", array($this->_Id));
+        $this->_Id = $UserId; //Set user id
+        $User = $this->_db->getRecord("SELECT username, password FROM user WHERE id = ? LIMIT 1", array($this->_Id)); //Load user details
 
         //Set user details
         $this->_Username = $User["username"];
         $this->_Password = $User["password"];
 
-        //Set user seeds array
-        $this->_Seeds = array();
+        //Fields
+        $this->_Fields = array(); //Set user fields array
+        $Fields = $this->_db->getRecords("SELECT id FROM field WHERE user_id = ?", array($this->_Id)); //Load user fields
 
-        //Load user seeds
-        $Seeds = $this->_db->getRecords("SELECT seed_id, amount FROM user_seeds WHERE user_id = ?", array($this->_Id));
-
-        //Set user seeds
-        foreach($Seeds as $Seed)
+        foreach($Fields as $Field) //Set user fields
         {
-            $seed = new Seed($this->_db, $Seed["seed_id"]);
+            array_push($this->_Fields, new Field($this->_db, $Field["id"]));
+        }
 
-            for($i = 0; $i < $Seed["amount"]; $i++)
+        //Seeds
+        $this->_Seeds = array(); //Set user seeds array
+        $Seeds = $this->_db->getRecords("SELECT seed_id, amount FROM user_seeds WHERE user_id = ?", array($this->_Id)); //Load user seeds
+
+        foreach($Seeds as $Seed) //Set user seeds
+        {
+            $seed = new Seed($this->_db, $Seed["seed_id"]); //Create seed
+
+            for($i = 0; $i < $Seed["amount"]; $i++) //Push seed multiple times to array to get the right amount
             {
                 array_push($this->_Seeds, $seed);
+            }
+        }
+
+        //Products (vegetables)
+        $this->_Products = array(); //Set user products array
+        $Products = $this->_db->getRecords("SELECT product_id, amount FROM user_products WHERE user_id = ?", array($this->_Id)); //Load user products
+
+        foreach($Products as $Product)
+        {
+            $product = new Product($this->_db, $Product["product_id"]); //Create product
+
+            for($i = 0; $i < $Product["amount"]; $i++) //Push product multiple times to array to get the right amount
+            {
+                array_push($this->_Products, $product);
             }
         }
     }
@@ -69,9 +87,12 @@ class User implements JsonSerializable
     public function jsonSerialize()
     {
         return array(
+            "id" => (int) $this->_Id,
             "username" => $this->_Username,
             "password" => $this->_Password,
-            "seeds" => $this->_Seeds
+            "fields" => $this->_Fields,
+            "seeds" => $this->_Seeds,
+            "products" => $this->_Products
         );
     }
 }
