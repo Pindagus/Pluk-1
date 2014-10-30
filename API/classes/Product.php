@@ -28,7 +28,7 @@ class Product implements JsonSerializable
     public function jsonSerialize()
     {
         return array(
-            "id" => $this->_Id,
+            "id" => (int) $this->_Id,
             "name" => $this->_Name,
             "description" => $this->_Description,
             "growtime" => $this->_Growtime
